@@ -1,11 +1,23 @@
 const path = require("path");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
-const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
-const TerserJSPlugin = require("terser-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
-const { env } = require("process");
+const {
+  env
+} = require("process");
+const devMode = env.NODE_ENV !== 'production';
+
+/* 
+const plugins = [];
+if (!devMode) {
+  // enable in production only
+  plugins.push(new MiniCssExtractPlugin());
+}
+
+new MiniCssExtractPlugin({
+      // Options similar to the same options in webpackOptions.output
+      filename: "css/main.css",
+    }),*/
 
 module.exports = {
   mode: env.NODE_ENV,
@@ -14,46 +26,56 @@ module.exports = {
     filename: "js/bundle.js",
     path: path.resolve(__dirname, "../dist"),
   },
-
-  optimization: {
-    minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
+  devtool: 'source-maps',
+  watch: true,
+  watchOptions: {
+    ignored: /node_modules/
   },
-
+  devServer: {
+    contentBase: path.join(__dirname, 'src'),
+    watchContentBase: true,
+    hot: true,
+    open: true,
+    inline: true,
+    stats: {
+      assets: false,
+      children: false,
+      chunks: false,
+      chunkModules: false,
+      colors: true,
+      entrypoints: false,
+      hash: false,
+      modules: false,
+      timings: false,
+      version: false,
+    }
+  },
   plugins: [
     new HtmlWebpackPlugin({
-      template: "public/index.html",
+      title: "Backbone boilerplate with webpack",
+      template: path.resolve(__dirname, "../public/index.html"),
     }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: path.resolve(__dirname, "../public"),
-          to: path.resolve(__dirname, "../dist"),
-        },
-      ],
-    }),
-    new MiniCssExtractPlugin({
-      // Options similar to the same options in webpackOptions.output
-      filename: "css/main.css",
-    }),
+    new webpack.HotModuleReplacementPlugin()
   ],
 
   module: {
-    rules: [
-      { test: /\.hbs$/, loader: "handlebars-loader" },
+    rules: [{
+        test: /\.hbs$/,
+        loader: "handlebars-loader"
+      },
       {
         // apply eslint on .js files
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: "eslint-loader",
-        options: {
-          failOnError: true,
-        },
+        use: ['babel-loader']
       },
       {
         // load .scss files
         test: /\.s[ac]ss$/i,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
-      },
+        use: [
+          'style-loader', "css-loader", "sass-loader"
+        ],
+      }
     ],
   },
 };
